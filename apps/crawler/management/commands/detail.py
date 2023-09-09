@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         arg_value = kwargs["arg"]
         if arg_value:
-            run(arg_value)
+            scrape_detail.run(arg_value)
             self.stdout.write(
                 self.style.SUCCESS(f"Function executed with argument: {arg_value}")
             )

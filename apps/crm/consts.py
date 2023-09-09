@@ -1,0 +1,1 @@
+TYPE_PRIORITY = ["type1", "type2", "type3"]

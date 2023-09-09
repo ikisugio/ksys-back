@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from apps.crawler.models import CrawlList, CrawlDetail
 from apps.crm.models import Company, Jigyosyo
 from django.utils import timezone
+import traceback
 
 
 def update_or_create_crawl_list(_crawl_list_data):
@@ -26,66 +27,71 @@ def update_or_create_crawl_detail(data):
 
 
 def update_or_create_detail_info(detail_data):
-    crawl_list_entry = CrawlList.objects.get(
-        jigyosyo_code=detail_data.get("jigyosyo__code")
-    )
+    try:
+        crawl_list_entry = CrawlList.objects.get(
+            jigyosyo_code=detail_data.get("jigyosyo__code")
+        )
 
-    crawl_detail_entry = CrawlDetail.objects.filter(
-        jigyosyo_code=crawl_list_entry
-    ).first()
+        crawl_detail_entry = CrawlDetail.objects.filter(
+            jigyosyo_code=crawl_list_entry
+        ).first()
 
-    if crawl_detail_entry and crawl_detail_entry.fetch_datetime:
-        if timezone.now() - crawl_detail_entry.fetch_datetime < timedelta(
-            days=90
-        ):
-            return None
+        if crawl_detail_entry and crawl_detail_entry.fetch_datetime:
+            if timezone.now() - crawl_detail_entry.fetch_datetime < timedelta(days=90):
+                return None
 
     # 1. Create or update Company instance
-    company_fields = [
-        f.name for f in Company._meta.get_fields() if f.name != "jigyosyos"
-    ]
-    print(f"detail_data ====================> {detail_data}")
-    company_data = {
-        **{k: detail_data.get(f"company__{k}") for k in company_fields},
-        "company_code": detail_data.get("company__code"),
-        "release_datetime": detail_data.get("jigyosyo__release_datetime"),
-    }
-    print(f"company_data ====================> {company_data}")
+        company_fields = [
+            f.name for f in Company._meta.get_fields() if f.name != "jigyosyos"
+        ]
+        print(f"detail_data ====================> {detail_data}")
+        company_data = {
+            **{k: detail_data.get(f"company__{k}") for k in company_fields},
+            "company_code": detail_data.get("company__code"),
+            "release_datetime": detail_data.get("jigyosyo__release_datetime"),
+        }
+        print(f"company_data ====================> {company_data}")
 
-    company_instance, company_created = custom_update_or_create(Company, defaults=company_data, name=company_data["name"], address=company_data["address"],)
-    
-    # company_instance, company_created = Company.objects.update_or_create(
-    #     name=company_data["name"],
-    #     address=company_data["address"],
-    #     defaults=company_data,
-    # )
+        company_instance, company_created = custom_update_or_create(Company, defaults=company_data, name=company_data["name"], address=company_data["address"],)
+        
+        # company_instance, company_created = Company.objects.update_or_create(
+        #     name=company_data["name"],
+        #     address=company_data["address"],
+        #     defaults=company_data,
+        # )
 
 
-    # 2. Create or update Jigyosyo instance with reference to Company instance
-    jigyosyo_fields = [
-        f.name
-        for f in Jigyosyo._meta.get_fields()
-        if f.name not in ["list_entry", "companies", "company"]
-    ]
-    jigyosyo_data = {
-        **{k: detail_data.get(f"jigyosyo__{k}") for k in jigyosyo_fields},
-        "jigyosyo_code": detail_data.get("jigyosyo__code"),
-        "name": crawl_list_entry.jigyosyo_name,
-        "kourou_jigyosyo_url": crawl_list_entry.kourou_jigyosyo_url,
-        "kourou_release_datetime": detail_data.get("jigyosyo__release_datetime"),
-        "crawl_list_entry": crawl_list_entry,
-        "company": company_instance,
-    }
-    jigyosyo_instance, _ = Jigyosyo.objects.update_or_create(
-        jigyosyo_code=jigyosyo_data["jigyosyo_code"],
-        defaults=jigyosyo_data,
-    )
+        # 2. Create or update Jigyosyo instance with reference to Company instance
+        jigyosyo_fields = [
+            f.name
+            for f in Jigyosyo._meta.get_fields()
+            if f.name not in ["list_entry", "companies", "company", "representative", "main_representative_for"]
+        ]
+        jigyosyo_data = {
+            **{k: detail_data.get(f"jigyosyo__{k}") for k in jigyosyo_fields},
+            "jigyosyo_code": detail_data.get("jigyosyo__code"),
+            "name": crawl_list_entry.jigyosyo_name,
+            "kourou_jigyosyo_url": crawl_list_entry.kourou_jigyosyo_url,
+            "kourou_release_datetime": detail_data.get("jigyosyo__release_datetime"),
+            "crawl_list_entry": crawl_list_entry,
+            "company": company_instance,
+        }
+        jigyosyo_instance, _ = Jigyosyo.objects.update_or_create(
+            jigyosyo_code=jigyosyo_data["jigyosyo_code"],
+            defaults=jigyosyo_data,
+        )
 
-    # 3. Update or create other related data
-    CrawlDetail.objects.update_or_create(
-        jigyosyo_code=crawl_list_entry,
-        defaults={"fetch_datetime": datetime.now()},
-    )
+        # 3. Update or create other related data
+        CrawlDetail.objects.update_or_create(
+            jigyosyo_code=crawl_list_entry,
+            defaults={"fetch_datetime": datetime.now()},
+        )
+
+    except Exception as e:
+        print(f"Error encountered: {e}")
+        traceback.print_exc()  # This will print the stack trace to help in debugging
+
+    return None
 
 
 

@@ -1,6 +1,5 @@
 import uuid
 from django.db import models
-from .jigyosyo import Jigyosyo
 
 
 class Company(models.Model):
@@ -20,6 +19,9 @@ class Company(models.Model):
     repr_position = models.CharField(max_length=255, null=True, blank=True)
     established_date = models.DateField(null=True, blank=True)
     release_datetime = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return self.name or "未命名の会社"
 
     class Meta:
         db_table = "company"

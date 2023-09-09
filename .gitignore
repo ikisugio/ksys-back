@@ -7,7 +7,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-*venv*/
+
 
 # C extensions
 *.so
@@ -125,6 +125,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Download archives
+.dl/
+
 # Environments
 .env
 .venv
@@ -133,6 +136,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+*venv*/
 
 # Spyder project settings
 .spyderproject

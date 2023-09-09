@@ -7,6 +7,7 @@ from ..utils.adnorm import full_norm
 from ..etc import configs
 from ..libs import db_helpers
 from ..models import CrawlList
+from apps.crm.models import Company, Jigyosyo
 
 
 def convert_url(url):
@@ -14,12 +15,16 @@ def convert_url(url):
 
 
 def get_soup(url):
-    response = requests.get(url)
-    return (
-        BeautifulSoup(response.content, "html.parser")
-        if response.status_code == 200
-        else None
-    )
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # エラーレスポンスを確認
+        return BeautifulSoup(response.content, "html.parser")
+    except requests.RequestException as e:
+        print(f"Request error for URL {url}: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error for URL {url}: {e}")
+        return None
 
 
 def fetch_company_detail(data_url):
@@ -141,6 +146,14 @@ def fetch_detail(base_data_url):
     return {**jigyosyo_details, **company_details}
 
 
+# def bulk_insert_jigyosyo(data_list):
+#     Jigyosyo.BULK_INSERT_MODE = True
+#     for data in data_list:
+#         update_or_create_detail_info(data)  # この関数内でJigyosyoのデータを追加または更新します
+#     Jigyosyo.BULK_INSERT_MODE = False
+
+
+
 def run():
     # CrawlListからすべてのURLを取得
     crawl_list_entries = CrawlList.objects.all()
@@ -149,5 +162,15 @@ def run():
         base_data_url = crawl_list_entry.kourou_jigyosyo_url
         detail_data = fetch_detail(base_data_url)
 
-        # 取得した詳細データをデータベースに挿入または更新
         db_helpers.update_or_create_detail_info(detail_data)
+
+
+    # all_details_data = []
+
+    # for crawl_list_entry in crawl_list_entries:
+    #     base_data_url = crawl_list_entry.kourou_jigyosyo_url
+    #     detail_data = fetch_detail(base_data_url)
+    #     all_details_data.append(detail_data)
+
+    # # 取得した詳細データをデータベースに一括挿入または更新
+    # bulk_insert_jigyosyo(all_details_data)
