@@ -70,7 +70,7 @@ class KK_Selenium:
         self._wait()
         return None
 
-    def get_jigyosyo_list_page(self, num=50):
+    def get_crawl_list_page(self, num=50):
         self.select_list_number(str(num))
         jigyosyo_all = self.driver.find_elements(By.CSS_SELECTOR, "#resultList > li")
         jigyosyo_html_list = list(
@@ -79,22 +79,22 @@ class KK_Selenium:
         jigyosyo_soup_list = list(
             map(lambda x: BeautifulSoup(x, "html.parser"), jigyosyo_html_list)
         )
-        jigyosyo_name_list = list(map(self.make_jigyosyo_dict, jigyosyo_soup_list))
+        jigyosyo_name_list = list(map(self.make_crawl_list_dict, jigyosyo_soup_list))
         return jigyosyo_name_list
 
-    def make_jigyosyo_dict(self, soup):
+    def make_crawl_list_dict(self, soup):
         jigyosyo_code = soup.select_one(".jigyosyoCd").text
         _jigyosyo_name = soup.select_one(".jigyosyoName").text
         jigyosyo_name = re.sub(r"[\u3000]", "_", _jigyosyo_name)
         jigyosyoUrl = self.url + soup.select_one(".detailBtn")["href"][1:]
         fetch_date = utils.times.today(configs.DATE_FORMAT)
 
-        jigyosyo_dict = {
-            "jigyosyo_code": jigyosyo_code,
-            "jigyosyo_name": jigyosyo_name,
-            "kourou_jigyosyo_url": jigyosyoUrl,
+        crawl_list_dict = {
+            "crawl_list__jigyosyo_code": jigyosyo_code,
+            "crawl_list__jigyosyo_name": jigyosyo_name,
+            "crawl_list__kourou_jigyosyo_url": jigyosyoUrl,
         }
-        return jigyosyo_dict
+        return crawl_list_dict
 
     def go_next_list_page(self):
         next_list_page_link = self.driver.find_elements(By.CSS_SELECTOR, ".page-item")[

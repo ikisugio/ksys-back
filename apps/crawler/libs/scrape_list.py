@@ -2,6 +2,7 @@ from datetime import datetime
 from ..utils import kk_parsers
 from ..libs import db_helpers
 from ..etc import configs
+import time
 
 
 def run():
@@ -20,7 +21,7 @@ def run():
 
         while is_next:
             natl_kk_selenium._wait()
-            jigyosyo_info_dict = natl_kk_selenium.get_jigyosyo_list_page()
+            jigyosyo_info_dict = natl_kk_selenium.get_crawl_list_page()
             current_datetime = datetime.now()
 
             print(jigyosyo_info_dict)
